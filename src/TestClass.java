@@ -1,5 +1,5 @@
 
-public class MainClass {
+public class TestClass {
 
 	public static void main(String[] args) {
 		Dice d = new Dice();

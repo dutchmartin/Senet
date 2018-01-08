@@ -8,12 +8,13 @@ public class Dice {
 	public int throwSticks() {
 		// generate a random number and check if its allowed
 		int n = randomInt();
-		while(!testNumber(n, excludedNumbers)) {
+		while (!testNumber(n, excludedNumbers)) {
 			n = randomInt();
 		}
 		return n;
 	}
-	//tests if n != one of the numbers, returns false if n == one of the numbers
+
+	// tests if n != one of the numbers, returns false if n == one of the numbers
 	private boolean testNumber(int n, int[] numbers) {
 		for (int num : excludedNumbers) {
 			if (n == num) {
