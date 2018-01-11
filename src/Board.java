@@ -41,6 +41,9 @@ public class Board {
 			return null;
 		}
 	}
+	public int getBoardsize() {
+		return this.boardSize;
+	}
 
 	private void printSide() {
 		System.out.println("+----------+");

@@ -1,7 +1,7 @@
 
 public class Square {
-	char value;
-	char validValue[] = { '.', 'x', 'o' };// allowed chars for in value
+	private char value;
+	private char validValue[] = { '.', 'x', 'o' };// allowed chars for in value
 
 	public char getValue() {
 		return value;
