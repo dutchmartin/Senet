@@ -3,26 +3,29 @@ public class Board {
 	private Square[] square;
 	private int boardSize = 30;
 	private int boardRows = 3;
+	private char blank = '.';
 
 	public Board() {
 		square = new Square[boardSize];
 		for (int i = 0; i < boardSize; i++) {
-			square[i] = new Square('.');
+			square[i] = new Square(blank);
 		}
 	}
 
 	public void print() {
 		printSide();
-		int rowSize = boardSize / boardRows;
+		int rowSize = getRowSize();
 		boolean countUp = true;
 		for (int i = 0; i < boardRows; i++) {
 			printBar(false);
 			if (countUp) {
+				// count up
 				for (int j = i * rowSize; j < (i + 1) * rowSize; j++) {
 					printSquare(j);
 				}
 			} else {
-				for (int j = (i + 1) * rowSize; j > i * rowSize; j--) {
+				// count down
+				for (int j = ((i + 1) * rowSize) - 1; j >= i * rowSize; j--) {
 					printSquare(j);
 				}
 			}
@@ -41,8 +44,18 @@ public class Board {
 			return null;
 		}
 	}
+
+	public void move(int posFrom, int posTo) {
+		getSquare(posTo).setValue(getSquare(posFrom).getValue());
+		getSquare(posFrom).setValue(blank);
+	}
+
 	public int getBoardsize() {
 		return this.boardSize;
+	}
+
+	public int getRowSize() {
+		return (int) boardSize / boardRows;
 	}
 
 	private void printSide() {

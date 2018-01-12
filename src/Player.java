@@ -2,7 +2,7 @@
 public class Player {
 	private String name;
 	private char colorsign;
-	private char[] signs = { 'x', 'o' };// the allowed player colorsigns
+	private char[] signs = { 'x', 'o' };// the allowed player colorSigns
 
 	public Player(String name, char colorsign) {
 		setName(name);
@@ -25,7 +25,7 @@ public class Player {
 		if (testsign(colorsign, signs)) {
 			this.colorsign = colorsign;
 		} else {
-			// handeling input error by assigning the first allowed colorsign
+			// Handling the input error by assigning the first allowed colorSign
 			System.out.println("Invalid colorsign, assuming " + signs[0]);
 			this.colorsign = signs[0];
 		}
