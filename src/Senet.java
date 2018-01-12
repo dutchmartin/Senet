@@ -1,3 +1,5 @@
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.Scanner;
 
 public class Senet {
@@ -31,7 +33,7 @@ public class Senet {
 			this.player[i] = new Player(name, playerChars[1]);
 		}
 
-		// decide who is gonna start and setup the game that way
+		// decide who will start and setup the game that way
 		int current = whoFirst(playerChars); // contains the current i of player[i] that has their set
 		player[current].setColorsign(playerChars[0]);
 		System.out.print(player[current].getName());
@@ -39,7 +41,7 @@ public class Senet {
 		current = switchPlayer(current);
 		System.out.print(player[current].getName());
 		System.out.print(" speelt als " + player[current].getColorsign() + " en zijn zet wordt voor hem gedaan\n");
-		// setup the gameboard
+		// setup the game board
 		boolean whatChar = true; // begin with 'o'
 		for (int i = 1; i <= board.getRowSize(); i++) {
 			board.getSquare(i).setValue(playerChars[boolToInt(whatChar)]);
@@ -58,27 +60,56 @@ public class Senet {
 			int diceNumber = dice.throwSticks();
 			System.out.println("Je hebt " + diceNumber + " gegooid!");
 			System.out.println("Geef jouw actie door of typ h voor help");
-			while (true) {
+			game: while (true) {
 				// procces input from user
 				String userInput = input.nextLine();
 				// decide what to do: exit, print help, or continue the game by setting a new
-				// step
+				// step on the board
 				userInput = userInput.trim().toLowerCase();
-				switch (userInput) {
-				case "h":
-					printHelp();
-					break;
-				case "s":
-					System.out.println(player[current].getName() + " geeft het op");
-					current = switchPlayer(current);
-					printHasWon(player[current].getName());
-					return;
-				default:
-					System.out.println(userInput + " is geen valide actie, geef jouw actie door of typ h voor help");
-					break;
+				if (isNumeric(userInput)) {
+					int stonePlace = Integer.parseInt(userInput);
+					// input number may not be greater than the number of fields
+					if (!(stonePlace > board.getBoardsize())) {
+						// check if the player even owns this stone, like you know, users can be stupid
+						if (player[current].getColorsign() == board.getSquare(stonePlace).getValue()) {
+							// check if the step is allowed by the game rules
+							if (stepIsValid(stonePlace, diceNumber)) {
+
+							}
+						}
+					}
+					board.print();
+					System.out.println("jouw stap is niet mogelijk of tegen de regels van het spel in");
+					System.out.println("Geef jouw actie door of typ h voor help");
+					continue game;
+				} else {
+					switch (userInput) {
+					case "h":
+						printHelp();
+						break;
+					case "q":
+						System.out.println(player[current].getName() + " geeft het op");
+						current = switchPlayer(current);
+						printHasWon(player[current].getName());
+						return;
+					case "s":
+						System.out.println(player[current].getName() + " zijn beurt stopt");
+						break game;
+					case "r":
+						printRules();
+						break;
+					default:
+						System.out
+								.println(userInput + " is geen valide actie, geef jouw actie door of typ h voor help");
+						break;
+					}
 				}
 			}
 		}
+	}
+
+	private boolean stepIsValid(int place, int steps) {
+		return false;
 	}
 
 	private int whoFirst(char[] players) {
@@ -102,6 +133,13 @@ public class Senet {
 		return (bool) ? 1 : 0;
 	}
 
+	public static boolean isNumeric(String str) {
+		NumberFormat formatter = NumberFormat.getInstance();
+		ParsePosition pos = new ParsePosition(0);
+		formatter.parse(str, pos);
+		return str.length() == pos.getIndex();
+	}
+
 	private int switchPlayer(int current) {
 		current++;
 		if (current < player.length) {
@@ -116,8 +154,13 @@ public class Senet {
 		System.out.println("help:");
 		System.out.println("h geeft help");
 		System.out.println("om een steen te verplaatsen typ je het nummer in van de te verplaatsen steen (zoals '10')");
-		System.out.println("s stopt het spel en laat de andere speler winnen");
-		System.out.println();
+		System.out.println("q stopt het spel en laat de andere speler winnen");
+		System.out.println("r geeft je de regels van het spel");
+		System.out.println("s geeft de beurt aan de andere speler");
+	}
+
+	private void printRules() {
+		System.out.println("De regels van het spel vind je op: http://nl.wikipedia.org/wiki/Senet");
 	}
 
 	private void printHasWon(String s) {
