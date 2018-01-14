@@ -41,6 +41,7 @@ public class Board {
 			return square[position];
 		} else {
 			// Nothing found, thats an error
+			System.out.println("ERROR: Your asking number " + position + " which does not exist in this universe");
 			return null;
 		}
 	}
@@ -49,7 +50,16 @@ public class Board {
 		getSquare(posTo).setValue(getSquare(posFrom).getValue());
 		getSquare(posFrom).setValue(blank);
 	}
-
+	public void reverse(int posA, int posB) {
+		char valueA = getSquare(posA).getValue();
+		getSquare(posA).setValue(getSquare(posB).getValue());
+		getSquare(posB).setValue(valueA);
+	}
+	
+	public void setBlank(int position) {
+		getSquare(position).setValue(blank);
+	}
+	
 	public int getBoardsize() {
 		return this.boardSize;
 	}

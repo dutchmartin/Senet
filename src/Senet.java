@@ -8,16 +8,21 @@ public class Senet {
 	private Player[] player;
 	private Scanner input;
 	private int playerSize = 2;
-	private char[] playerChars = { 'x', 'o' };
-	// private char validValue[] = { '.', 'x', 'o' };// allowed chars in the actual
-	// playing field
+	private char validValue[] = { '.', 'x', 'o' };// allowed chars in the actual playing field
+	private char emptyField = validValue[0];
+	private char[] playerChars = { validValue[1], validValue[2] };
 	private int startNumber = 1; // the number to throw to start first with the game
+	private int[] doubleTurn = { 1, 4, 6 };
+	private int fallingShaftPosition = 27;
+	private int[] protectedPlaces = { 26, 28, 29 };
+	private int endPosition;
 
 	public Senet() {
 		this.board = new Board();
 		this.dice = new Dice();
 		this.input = new Scanner(System.in);
 		this.player = new Player[playerSize];
+		this.endPosition = board.getBoardsize();
 	}
 
 	public void play() {
@@ -50,17 +55,18 @@ public class Senet {
 		// execute hardcoded first steps
 		board.move(10, 11);
 		board.move(9, 10);
-		board.print();
 		current = switchPlayer(current);
 		// start game loop
-		while (true) {
+		nextturn: while (!hasSomeoneWon()) {
+			// print board
+			board.print();
 			// inform player of the status
 			System.out.print(player[current].getName());
 			System.out.print(" is aan de beurt\n");
 			int diceNumber = dice.throwSticks();
 			System.out.println("Je hebt " + diceNumber + " gegooid!");
 			System.out.println("Geef jouw actie door of typ h voor help");
-			game: while (true) {
+			game: while (!hasSomeoneWon()) {
 				// procces input from user
 				String userInput = input.nextLine();
 				// decide what to do: exit, print help, or continue the game by setting a new
@@ -69,18 +75,42 @@ public class Senet {
 				if (isNumeric(userInput)) {
 					int stonePlace = Integer.parseInt(userInput);
 					// input number may not be greater than the number of fields
-					if (!(stonePlace > board.getBoardsize())) {
+					int goTo = stonePlace + diceNumber;
+					if (!(stonePlace > board.getBoardsize()) && !(goTo > board.getBoardsize())) {
 						// check if the player even owns this stone, like you know, users can be stupid
 						if (player[current].getColorsign() == board.getSquare(stonePlace).getValue()) {
-							// check if the step is allowed by the game rules
-							if (stepIsValid(stonePlace, diceNumber)) {
-
+							// check if player goes to end position
+							if (goTo == endPosition) {
+								if (hasAllStonesAtLastRow(player[current].getColorsign())) {
+									// delete stone of board
+									board.setBlank(stonePlace);
+								} else {
+									// Illegal move, try something else
+									notifyMoveIsInvalid();
+									continue game;
+								}
+							} else {
+								// check for rule 3: the falling shaft
+								if (goTo == fallingShaftPosition) {
+									executeRule3(stonePlace);
+								}
+								// rule 3 does not apply, go further
+								else {
+									// check if the step is allowed by the game rules
+									if (stepIsSuccesfull(stonePlace, diceNumber, current)) {
+										// if the player has thrown the right number he may go again
+										if (canGoAgian(diceNumber)) {
+											continue nextturn;
+										} else {
+											current = switchPlayer(current);
+											continue nextturn;
+										}
+									}
+								}
 							}
 						}
 					}
-					board.print();
-					System.out.println("jouw stap is niet mogelijk of tegen de regels van het spel in");
-					System.out.println("Geef jouw actie door of typ h voor help");
+					notifyMoveIsInvalid();
 					continue game;
 				} else {
 					switch (userInput) {
@@ -98,6 +128,9 @@ public class Senet {
 					case "r":
 						printRules();
 						break;
+					case "p":
+						board.print();
+						break;
 					default:
 						System.out
 								.println(userInput + " is geen valide actie, geef jouw actie door of typ h voor help");
@@ -108,8 +141,123 @@ public class Senet {
 		}
 	}
 
-	private boolean stepIsValid(int place, int steps) {
+	private boolean stepIsSuccesfull(int place, int steps, int currentPlayer) {
+		int endPos = place + steps;
+		int opponentKey = switchPlayer(currentPlayer);
+		boolean rule6 = rule6(place, steps, currentPlayer);
+		// rule 1: check if field is empty
+		if (board.getSquare(endPos).getValue() == emptyField) {
+			// field is empty
+			// only rule 6 can still stop this
+			if (rule6) {
+				board.move(place, endPos);
+			}
+			return rule6;
+		} else if (board.getSquare(endPos).getValue() == player[opponentKey].getColorsign()) {
+			// rule 2 applies now: field contains stone of the opponent, but can attack it
+			// rule 6 can make the move invalid
+			// else : the stone attacks enemy stone and stones switch position if rule 5
+			// does not apply
+			// rule 5: two stones next to each other cannot be attacked
+			// rule 7: stones on protected places cannot be attacked
+			if (!rule7(endPos)) {
+				if (rule6) {
+					if (!rule5(endPos, currentPlayer)) {
+						board.reverse(place, endPos);
+					}
+				}
+			}
+		}
 		return false;
+	}
+
+	private boolean hasSomeoneWon() {
+		// per player check if he still has stones on the board
+		playerloop: for (Player canidate : player) {
+			for (int i = 1; i <= board.getBoardsize(); i++) {
+				if (board.getSquare(i).getValue() == canidate.getColorsign()) {
+					continue playerloop;
+				}
+				if (i == endPosition) {
+					printHasWon(canidate.getName());
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private void executeRule3(int place) {
+		boolean placed = false;
+		// while not placed
+		for (int i = 1; !placed; i++) {
+			if (board.getSquare(i).getValue() == emptyField) {
+				board.getSquare(i).setValue(board.getSquare(place).getValue());
+				board.getSquare(place).setValue(emptyField);
+				placed = true;
+			}
+		}
+	}
+
+	// rule5: return false if 2 or more stones of the enemy player cannot be
+	// attacked
+	private boolean rule5(int endPos, int currentPlayer) {
+		char enemyColorSign = player[switchPlayer(currentPlayer)].getColorsign();
+		if (board.getSquare(endPos).getValue() == enemyColorSign) {
+			// check if the stone has neighbors with enemy
+			boolean checkminone = board.getSquare(endPos - 1).getValue() == enemyColorSign;
+			boolean checkplusone = board.getSquare(endPos + 1).getValue() == enemyColorSign;
+			if (checkminone || checkplusone) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// rule6: return false if the enemy has 3 stones to block the player
+	private boolean rule6(int place, int steps, int currentPlayer) {
+		// a player can not jump over 3 stones of another player
+		int jumpOverStones = 3;
+		int endPos = place + steps;
+		char enemyColorSign = player[switchPlayer(currentPlayer)].getColorsign();
+		if (steps > jumpOverStones) {
+			// validate if the enemy has 3 stones next to each other
+			int occurances = 0;
+			for (int i = place + 1; i < endPos; i++) {
+				if (board.getSquare(i).getValue() == enemyColorSign) {
+					occurances++;
+				} else {
+					occurances = 0;
+				}
+			}
+			if (occurances >= jumpOverStones) {
+				// rule 6 applies and move is illegal
+				return false;
+			}
+		}
+		// rule 6 does not apply
+		return true;
+	}
+
+	// rule7: return false if the attacked position is protected
+	private boolean rule7(int attackedPos) {
+		for (int forbidden : protectedPlaces) {
+			if (attackedPos == forbidden) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean hasAllStonesAtLastRow(char colorSign) {
+		int maxbound = board.getBoardsize() - board.getRowSize();
+		// check if the player still has stones in the first 2 rows
+		for (int i = 1; i <= maxbound; i++) {
+			if (board.getSquare(i).getValue() == colorSign) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private int whoFirst(char[] players) {
@@ -134,10 +282,10 @@ public class Senet {
 	}
 
 	public static boolean isNumeric(String str) {
-		NumberFormat formatter = NumberFormat.getInstance();
-		ParsePosition pos = new ParsePosition(0);
-		formatter.parse(str, pos);
-		return str.length() == pos.getIndex();
+			NumberFormat formatter = NumberFormat.getInstance();
+			ParsePosition pos = new ParsePosition(0);
+			formatter.parse(str, pos);
+			return str.length() == pos.getIndex();
 	}
 
 	private int switchPlayer(int current) {
@@ -149,6 +297,16 @@ public class Senet {
 		}
 	}
 
+	private boolean canGoAgian(int dicenumber) {
+		boolean canGo = true;
+		for (int i : doubleTurn) {
+			if (dicenumber == i) {
+				canGo = false;
+			}
+		}
+		return canGo;
+	}
+
 	private void printHelp() {
 		// print help and game options
 		System.out.println("help:");
@@ -157,6 +315,13 @@ public class Senet {
 		System.out.println("q stopt het spel en laat de andere speler winnen");
 		System.out.println("r geeft je de regels van het spel");
 		System.out.println("s geeft de beurt aan de andere speler");
+		System.out.println("p print het bord nog een keer");
+	}
+
+	private void notifyMoveIsInvalid() {
+		board.print();
+		System.out.println("jouw stap is niet mogelijk of tegen de regels van het spel in");
+		System.out.println("Geef jouw actie door of typ h voor help");
 	}
 
 	private void printRules() {
