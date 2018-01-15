@@ -1,3 +1,5 @@
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 
 public class TestClass {
 
@@ -24,10 +26,18 @@ public class TestClass {
 //		}
 //		board.getSquare(11).setValue(':');
 //		board.print();
-		String s = "  d ";
-		s = s.trim();
-		System.out.println(s);
+		String s ="";
+		System.out.println(isNumeric(""));
+		System.out.println(s.trim().isEmpty());
 	}
 	
-
+	public static boolean isNumeric(String str) {
+		if (str == null || str.trim().isEmpty()) {
+			return false;
+		}
+		NumberFormat formatter = NumberFormat.getInstance();
+		ParsePosition pos = new ParsePosition(0);
+		formatter.parse(str, pos);
+		return str.length() == pos.getIndex();
+}
 }
