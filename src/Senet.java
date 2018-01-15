@@ -1,3 +1,4 @@
+//@Author Martijn Groeneveldt
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Scanner;
@@ -15,10 +16,21 @@ public class Senet {
 	private int[] doubleTurn = { 1, 4, 6 };
 	private int fallingShaftPosition = 27;
 	private int[] protectedPlaces = { 26, 28, 29 };
+	private int boardSize = 30;
+	private int boardRows = 3;
 	private int endPosition;
 
 	public Senet() {
-		this.board = new Board();
+		this.board = new Board(boardSize, boardRows);
+		doConstructorTasks();
+	}
+
+	public Senet(Board test) {
+		this.board = test;
+		doConstructorTasks();
+	}
+
+	private void doConstructorTasks() {
 		this.dice = new Dice();
 		this.input = new Scanner(System.in);
 		this.player = new Player[playerSize];
@@ -26,11 +38,6 @@ public class Senet {
 	}
 
 	public void play() {
-		// print header
-		System.out.println("+-------------+");
-		System.out.println("|--Senet--by--|");
-		System.out.println("|-dutchmartin-|");
-		System.out.println("+-------------+");
 		// initialize game by setting up players
 		for (int i = 0; i < playerSize; i++) {
 			System.out.println("speler " + i + ", voer jouw naam in:");
@@ -55,6 +62,22 @@ public class Senet {
 		// execute hardcoded first steps
 		board.move(10, 11);
 		board.move(9, 10);
+		runGame(current);
+	}
+
+	public void testGame() {
+		int current = 0;
+		for (int i = 0; i < playerChars.length; i++) {
+			this.player[i] = new Player("" + playerChars[i], playerChars[i]);
+			// x moet beginnen
+			if (this.player[i].getColorsign() == playerChars[0]) {
+				current = switchPlayer(i);
+			}
+		}
+		runGame(current);
+	}
+
+	private void runGame(int current) {
 		current = switchPlayer(current);
 		// start game loop
 		nextturn: while (!hasSomeoneWon()) {
@@ -72,7 +95,7 @@ public class Senet {
 			System.out.println("Geef jouw actie door of typ h voor help");
 			// main game turn loop
 			game: while (!hasSomeoneWon()) {
-				// procces input from user
+				// Process input from user
 				String userInput = input.nextLine();
 				// decide what to do: exit, print help, or continue the game by setting a new
 				// step on the board
@@ -89,6 +112,8 @@ public class Senet {
 								if (hasAllStonesAtLastRow(player[current].getColorsign())) {
 									// delete stone of board
 									board.setBlank(stonePlace);
+									current = switchPlayer(current);
+									continue nextturn;
 								} else {
 									// Illegal move, try something else
 									notifyMoveIsInvalid();
@@ -131,6 +156,7 @@ public class Senet {
 						return;
 					case "s":
 						System.out.println(player[current].getName() + " zijn beurt stopt");
+						current = switchPlayer(current);
 						break game;
 					case "r":
 						printRules();
@@ -302,7 +328,7 @@ public class Senet {
 		// has to be bigger than minimum size
 		int minsize = 0;
 		if (valid) {
-			if(!(Integer.parseInt(str)>minsize)) {
+			if (!(Integer.parseInt(str) > minsize)) {
 				return false;
 			}
 		}
@@ -350,6 +376,7 @@ public class Senet {
 	}
 
 	private void printHasWon(String s) {
+		board.print();
 		System.out.println(s + " heeft gewonnen.");
 		System.out.println("Bedankt voor het spelen en tot de volgende keer!");
 	}

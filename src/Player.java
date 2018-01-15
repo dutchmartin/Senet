@@ -1,4 +1,4 @@
-
+//@Author Martijn Groeneveldt
 public class Player {
 	private String name;
 	private char colorsign;

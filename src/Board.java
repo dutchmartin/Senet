@@ -1,14 +1,29 @@
 
+//@Author Martijn Groeneveldt
 public class Board {
 	private Square[] square;
-	private int boardSize = 30;
-	private int boardRows = 3;
+	private int boardSize;
+	private int boardRows;
 	private char blank = '.';
 
-	public Board() {
+	public Board(int boardSize, int boardRows) {
+		this.boardSize = boardSize;
+		this.boardRows = boardRows;
 		square = new Square[boardSize];
 		for (int i = 0; i < boardSize; i++) {
 			square[i] = new Square(blank);
+		}
+	}
+
+	public Board(int boardRows, String testboard) {
+		this.boardSize = testboard.length();
+		this.boardRows = boardRows;
+		square = new Square[boardSize];
+		char[] boardValues = testboard.toCharArray();
+		int i = 0;
+		for (char value : boardValues) {
+			square[i] = new Square(value);
+			i++;
 		}
 	}
 
@@ -50,16 +65,17 @@ public class Board {
 		getSquare(posTo).setValue(getSquare(posFrom).getValue());
 		getSquare(posFrom).setValue(blank);
 	}
+
 	public void reverse(int posA, int posB) {
 		char valueA = getSquare(posA).getValue();
 		getSquare(posA).setValue(getSquare(posB).getValue());
 		getSquare(posB).setValue(valueA);
 	}
-	
+
 	public void setBlank(int position) {
 		getSquare(position).setValue(blank);
 	}
-	
+
 	public int getBoardsize() {
 		return this.boardSize;
 	}
